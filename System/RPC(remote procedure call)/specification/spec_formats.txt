@@ -1,0 +1,44 @@
+Spécification des différents formats relatifs au projet :
+Ce document à pour but de centraliser la spécification des différents formats.
+
+Définition des constantes pour les types supportés :
+ * Pour le moment, seuls les types de base sont supportés :
+   * TYPE_VOID : 0x00
+   * TYPE_INT : 0x01
+   * TYPE_STRING : 0x02
+
+Arguments passés à une fonction externe : 
+ * Une structure "arg" permet de représenter les arguments, elle possède 2 champs :
+   * type (int) : le type de l'argument, par rapport aux constantes définies ci-dessus
+   * *arg (void) : pointeur vers l'argument lui-même
+
+Appel d'une fonction externe :
+ * Nous avons choisi d'utiliser un prototype à la mode execv :
+   * prototype : int appel_externe(const char *fonction, void *retour, unsigned short argc, struct arg *argv) 
+   * exemple : appel_externe("addition", @retour, 2, {{0x01, 7}, {0x01, 1024}}) pour additioner 7 et 1024
+ * Retour de la fonction :
+   * 
+Sérialisation :
+ * Pour communiquer avec le serveur, il faut définir un "protocole" pour effectuer les appels externes et pour rapatrier la valeur de retour :
+   * Spécification du format de sérialisation des différents types définis :
+     * TYPE_VOID : 0x00
+     * TYPE_INT : 0x01 lg c1 c2 ... cn
+     * TYPE_STRING : 0x02 lg c1 c2 ... cn
+     * lg : nombre de caractères nécessaires pour écrire l'argument
+     * c1 c2 ... cn : caractères composant l'écriture de l'argument (écriture de gauche a droite)
+   * Format du message envoyé (appel) : nature_operation (int) nb_arguments (short) arg1 (arg) arg2 (arg) ... argn (arg)
+     * Spécification des constantes pour les types d'opérations :
+       * Pour l'instant, nous définissons uniquement les opérateurs arithmétiques :
+         * FUNC_ADD : 0x00
+         * FUNC_SUB : 0x01
+         * FUNC_MULT : 0x02
+         * FUNC_DIV : 0x03
+     * exemple (continuité de l'exemple ci-dessus) : message envoyé
+       * 0x00	2	0x01	1	9	0x01	4	1024
+         add	2 args	int	1 carac	9	int	4 carac	1024
+         ce qui se traduit se traduit par : "additionne deux éléments : le premier est un entier qui s'écrit sur 1 caractère, ce caractère est 9. le second est un entier qui s'écrit sur 4 caractères, ces caractères sont 1, 0, 2 et 4."
+   * Format du message reçu (retour) : valeur_retour (arg)
+     * exemple (continuité avec l'exemple ci-dessus) : message reçu
+       * 0x01 4 1033
+         ce qui se traduit par : "la valeur retournée est un entier qui s'écrit sur 4 caractères, ces caractères sont 1, 0, 3 et 3."
+
